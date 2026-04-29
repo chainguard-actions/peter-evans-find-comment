@@ -1,6 +1,12 @@
 # peter-evans/find-comment
 
-Hardened GitHub Action by [Chainguard](https://www.chainguard.dev).
+Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at [https://github.com/peter-evans/find-comment](https://github.com/peter-evans/find-comment).
+
+## Versions
+
+| Version | Tag | Upstream commit |
+|---------|-----|-----------------|
+| v4.0.0 | [`v4.0.0`](https://github.com/chainguard-actions/find-comment/tree/v4.0.0) | — |
 
 ## Privacy
 
