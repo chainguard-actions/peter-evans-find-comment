@@ -1,5 +1,7 @@
 # peter-evans/find-comment
 
+A GitHub action to find an issue or pull request comment
+
 Hardened by [Chainguard](https://www.chainguard.dev) from the upstream action at [https://github.com/peter-evans/find-comment](https://github.com/peter-evans/find-comment).
 
 ## Versions
