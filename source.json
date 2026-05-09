@@ -1,4 +1,6 @@
 {
-  "upstream": "peter-evans/find-comment",
-  "version": "v4.0.0"
+  "owner": "peter-evans",
+  "repo": "find-comment",
+  "version": "",
+  "url": "https://github.com/peter-evans/find-comment"
 }
