@@ -1,7 +1,0 @@
-{
-  "owner": "peter-evans",
-  "name": "find-comment",
-  "visibility": "internal",
-  "description": "A GitHub action to find an issue or pull request comment",
-  "block_publish": false
-}
