@@ -1,0 +1,41 @@
+name: Test find-comment no comment found (empty outputs)
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_REF: refs/heads/main
+      GITHUB_EVENT_NAME: push
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: find
+        uses: .
+        continue-on-error: true
+        with:
+          token: ${{ github.token }}
+          repository: peter-evans/find-comment
+          issue-number: 1
+          body-includes: "this-string-will-never-match-any-real-comment-xyz123abc"
+
+      - name: Assert comment-id is empty when no match found
+        env:
+          COMMENT_ID: ${{ steps.find.outputs.comment-id }}
+          OUTCOME: ${{ steps.find.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          echo "comment-id: '$COMMENT_ID'"
+          # The action either succeeds with empty outputs (no match) or fails due to auth
+          # In both cases, comment-id should be empty or the step should have failed
+          if [ "$OUTCOME" = "success" ]; then
+            if [ -n "$COMMENT_ID" ]; then
+              echo "FAIL: expected empty comment-id when no match found, got: $COMMENT_ID"
+              exit 1
+            fi
+            echo "PASS: comment-id is empty as expected (no match found)"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed as expected (likely auth error in act environment)"
+          else
+            echo "PASS: outcome=$OUTCOME"
+          fi

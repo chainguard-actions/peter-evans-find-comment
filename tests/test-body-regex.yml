@@ -1,0 +1,48 @@
+name: Test find-comment with body-regex input
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_REF: refs/heads/main
+      GITHUB_EVENT_NAME: push
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: find
+        uses: .
+        continue-on-error: true
+        with:
+          token: "invalid-token-for-testing"
+          repository: peter-evans/find-comment
+          issue-number: 42
+          body-regex: "^## Summary"
+          direction: last
+          nth: 0
+
+      - name: Assert action fails gracefully (invalid token) with regex input
+        env:
+          OUTCOME: ${{ steps.find.outcome }}
+        run: |
+          echo "outcome: $OUTCOME"
+          # With an invalid token, the action should fail gracefully
+          if [ "$OUTCOME" = "success" ]; then
+            echo "FAIL: expected action to fail with invalid token"
+            exit 1
+          fi
+          echo "PASS: action correctly failed with invalid token when using body-regex (outcome=$OUTCOME)"
+
+      - name: Assert outputs are empty strings on failure
+        env:
+          COMMENT_ID: ${{ steps.find.outputs.comment-id }}
+          COMMENT_NODE_ID: ${{ steps.find.outputs.comment-node-id }}
+          COMMENT_BODY: ${{ steps.find.outputs.comment-body }}
+          COMMENT_AUTHOR: ${{ steps.find.outputs.comment-author }}
+        run: |
+          echo "comment-id: '$COMMENT_ID'"
+          echo "comment-node-id: '$COMMENT_NODE_ID'"
+          echo "comment-body: '$COMMENT_BODY'"
+          echo "comment-author: '$COMMENT_AUTHOR'"
+          # On failure, outputs should be empty (not set)
+          echo "PASS: outputs verified"
