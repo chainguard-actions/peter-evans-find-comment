@@ -1,0 +1,37 @@
+name: Test body-regex - no match found
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: find-comment
+        uses: .
+        with:
+          repository: peter-evans/find-comment
+          issue-number: 1
+          body-regex: '^NONEXISTENT_REGEX_PATTERN_XYZ_99999_ABCDEF$'
+
+      - name: Assert no comment found via regex - comment-id is empty
+        env:
+          COMMENT_ID: ${{ steps.find-comment.outputs.comment-id }}
+        run: |
+          echo "comment-id: '$COMMENT_ID'"
+          if [ -n "$COMMENT_ID" ]; then
+            echo "FAIL: expected no comment-id but got: $COMMENT_ID"
+            exit 1
+          fi
+          echo "PASS: no comment found via regex as expected"
+
+      - name: Assert no comment found via regex - comment-node-id is empty
+        env:
+          COMMENT_NODE_ID: ${{ steps.find-comment.outputs.comment-node-id }}
+        run: |
+          echo "comment-node-id: '$COMMENT_NODE_ID'"
+          if [ -n "$COMMENT_NODE_ID" ]; then
+            echo "FAIL: expected no comment-node-id but got: $COMMENT_NODE_ID"
+            exit 1
+          fi
+          echo "PASS: comment-node-id is empty as expected"

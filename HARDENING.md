@@ -8,72 +8,81 @@
 
 **Test Policy SHA:** `843adf9e4b8f85d0c08b27b9d0b09dd094b54702`
 
-**Harden Agent Version:** `1`
+**Harden Agent Version:** `2`
 
 Action **peter-evans--find-comment/v3** was hardened automatically. 3 finding(s) were identified and resolved across 1 iteration(s).
 
 ## Findings Fixed
 
-### script-injection (severity: high)
-
-Sub-rule (a): Direct expression interpolation of user-controlled `workflow_dispatch` inputs inside `run:` shell commands. `${{ github.event.inputs.main_version }}` and `${{ github.event.inputs.target }}` are interpolated directly into `git tag` and `git push` commands, allowing an attacker with workflow_dispatch access to inject arbitrary shell commands.
-
-Locations:
-
-- `.github/workflows/update-major-version.yml:28`
-- `.github/workflows/update-major-version.yml:30`
-
 ### unpinned-uses (severity: high)
 
-Multiple workflow files reference actions using mutable tags instead of pinned 40-character SHA digests, making them vulnerable to supply-chain attacks if the tag is moved. Failing references include: actions/checkout@v4, actions/setup-node@v4, actions/upload-artifact@v4, actions/download-artifact@v4, peter-evans/create-pull-request@v6 (ci.yml); peter-evans/enable-pull-request-automerge@v3 (automerge-dependabot.yml); peter-evans/slash-command-dispatch@v4 (slash-command-dispatch.yml); actions/checkout@v4 (update-major-version.yml).
+All workflow files reference actions using mutable tags instead of pinned full-length SHA commit hashes, making them vulnerable to supply-chain attacks if the referenced tag is moved or compromised.
+
+.github/workflows/automerge-dependabot.yml:
+  - uses: peter-evans/enable-pull-request-automerge@v3
+
+.github/workflows/ci.yml:
+  - uses: actions/checkout@v4
+  - uses: actions/setup-node@v4
+  - uses: actions/upload-artifact@v4 (×2)
+  - uses: actions/checkout@v4
+  - uses: actions/download-artifact@v4 (×2)
+  - uses: peter-evans/create-pull-request@v6
+
+.github/workflows/slash-command-dispatch.yml:
+  - uses: peter-evans/slash-command-dispatch@v4
+
+.github/workflows/update-major-version.yml:
+  - uses: actions/checkout@v4
 
 Locations:
 
+- `.github/workflows/automerge-dependabot.yml:8`
+- `.github/workflows/ci.yml:16`
 - `.github/workflows/ci.yml:17`
-- `.github/workflows/ci.yml:18`
-- `.github/workflows/ci.yml:26`
+- `.github/workflows/ci.yml:24`
 - `.github/workflows/ci.yml:27`
-- `.github/workflows/ci.yml:35`
+- `.github/workflows/ci.yml:36`
+- `.github/workflows/ci.yml:39`
+- `.github/workflows/ci.yml:43`
 - `.github/workflows/ci.yml:155`
-- `.github/workflows/automerge-dependabot.yml:9`
+- `.github/workflows/ci.yml:158`
+- `.github/workflows/ci.yml:163`
 - `.github/workflows/slash-command-dispatch.yml:9`
 - `.github/workflows/update-major-version.yml:19`
 
 ### missing-permissions (severity: medium)
 
-None of the workflow files define a top-level `permissions:` key, and no individual jobs define job-level `permissions:` keys. Without explicit permissions, workflows run with the default (potentially broad) token permissions, violating the principle of least privilege.
+None of the workflow files define a top-level `permissions:` block, and no job within them defines job-level permissions either. Without explicit permissions, workflows run with the default (potentially broad) token permissions, violating the principle of least privilege.
 
 Locations:
 
-- `.github/workflows/ci.yml:1`
 - `.github/workflows/automerge-dependabot.yml:1`
+- `.github/workflows/ci.yml:1`
 - `.github/workflows/slash-command-dispatch.yml:1`
 - `.github/workflows/update-major-version.yml:1`
+
+### script-injection (severity: high)
+
+update-major-version.yml directly interpolates user-controlled `workflow_dispatch` inputs into `run:` shell commands via ${{ }} expressions (sub-rule a). An attacker with permission to trigger the workflow can inject arbitrary shell commands.
+
+Line 27: `run: git tag -f ${{ github.event.inputs.main_version }} ${{ github.event.inputs.target }}`
+Line 28: `run: git push origin ${{ github.event.inputs.main_version }} --force`
+
+Both `github.event.inputs.main_version` and `github.event.inputs.target` are workflow_dispatch inputs that flow directly into shell without quoting or sanitization. These should be moved to `env:` variables and referenced as quoted shell variables (e.g., `"$MAIN_VERSION"`) instead.
+
+Locations:
+
+- `.github/workflows/update-major-version.yml:27`
+- `.github/workflows/update-major-version.yml:29`
 
 ## Iteration Notes
 
 ### Iteration 1
 
-**Fixes applied:** script-injection, unpinned-uses, missing-permissions
+**Fixes applied:** unpinned-uses, missing-permissions, script-injection
 
 **Notes:**
 
-Fixed all three finding types across four workflow files:
-
-1. **script-injection** (update-major-version.yml): Moved `${{ github.event.inputs.main_version }}` and `${{ github.event.inputs.target }}` out of `run:` shell commands into `env:` blocks as `MAIN_VERSION` and `TARGET`, then referenced them as `"$MAIN_VERSION"` and `"$TARGET"` in the shell scripts.
-
-2. **unpinned-uses**: Pinned all action references to full 40-character commit SHAs:
-   - `actions/checkout@v4` → `@34e114876b0b11c390a56381ad16ebd13914f8d5` (ci.yml ×3, update-major-version.yml ×1)
-   - `actions/setup-node@v4` → `@49933ea5288caeca8642d1e84afbd3f7d6820020` (ci.yml)
-   - `actions/upload-artifact@v4` → `@ea165f8d65b6e75b540449e92b4886f43607fa02` (ci.yml ×2)
-   - `actions/download-artifact@v4` → `@d3f86a106a0bac45b974a628896c90dbdf5c8093` (ci.yml ×3)
-   - `peter-evans/create-pull-request@v6` → `@c5a7806660adbe173f04e3e038b0ccdcd758773c` (ci.yml)
-   - `peter-evans/enable-pull-request-automerge@v3` → `@a660677d5469627102a1c1e11409dd063606628d` (automerge-dependabot.yml)
-   - `peter-evans/slash-command-dispatch@v4` → `@13bc09769d122a64f75aa5037256f6f2d78be8c4` (slash-command-dispatch.yml)
-
-3. **missing-permissions**: Added top-level `permissions:` blocks to all four workflow files with minimal required permissions:
-   - ci.yml: `contents: read` at top level; `contents: write` + `pull-requests: write` on the `package` job
-   - automerge-dependabot.yml: `contents: write` + `pull-requests: write`
-   - slash-command-dispatch.yml: `contents: read`
-   - update-major-version.yml: `contents: write` (needed for git push)
+Fixed all four workflow files: (1) Pinned all 7 action references to full commit SHAs using lookup_action_sha, preserving original tags as comments. (2) Added minimal permissions blocks to all workflows — automerge-dependabot.yml gets pull-requests:write; ci.yml gets contents:read at top level with the package job overriding to contents:write + pull-requests:write; slash-command-dispatch.yml gets contents:read; update-major-version.yml gets contents:write. (3) Fixed script injection in update-major-version.yml by moving github.event.inputs.main_version and github.event.inputs.target into step env: blocks and referencing them as quoted shell variables.
 

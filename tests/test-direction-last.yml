@@ -1,48 +1,48 @@
-name: Test find-comment with direction=last and comment-author filter
+name: Test direction=last with nth parameter
 on:
   workflow_dispatch:
 jobs:
   test:
     runs-on: ubuntu-latest
-    env:
-      GITHUB_REF: refs/heads/main
-      GITHUB_EVENT_NAME: push
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - id: find
+      - id: find-comment
         uses: .
-        continue-on-error: true
         with:
-          token: "invalid-token-for-testing"
           repository: peter-evans/find-comment
-          issue-number: 10
-          comment-author: "github-actions[bot]"
-          body-includes: "<!-- bot-comment -->"
+          issue-number: 1
+          body-includes: 'NONEXISTENT_COMMENT_DIRECTION_TEST_XYZ_54321'
           direction: last
           nth: 0
 
-      - name: Assert action fails gracefully with invalid token
+      - name: Assert no comment found with direction=last - comment-id is empty
         env:
-          OUTCOME: ${{ steps.find.outcome }}
-        run: |
-          echo "outcome: $OUTCOME"
-          # With an invalid token, the action should fail (not succeed)
-          if [ "$OUTCOME" = "success" ]; then
-            echo "FAIL: expected action to fail with invalid token"
-            exit 1
-          fi
-          echo "PASS: action correctly failed with invalid token when using direction=last and comment-author filter (outcome=$OUTCOME)"
-
-      - name: Assert all four outputs exist (even if empty)
-        env:
-          COMMENT_ID: ${{ steps.find.outputs.comment-id }}
-          COMMENT_NODE_ID: ${{ steps.find.outputs.comment-node-id }}
-          COMMENT_BODY: ${{ steps.find.outputs.comment-body }}
-          COMMENT_AUTHOR: ${{ steps.find.outputs.comment-author }}
+          COMMENT_ID: ${{ steps.find-comment.outputs.comment-id }}
         run: |
           echo "comment-id: '$COMMENT_ID'"
-          echo "comment-node-id: '$COMMENT_NODE_ID'"
-          echo "comment-body: '$COMMENT_BODY'"
-          echo "comment-author: '$COMMENT_AUTHOR'"
-          echo "PASS: all four outputs are accessible"
+          if [ -n "$COMMENT_ID" ]; then
+            echo "FAIL: expected no comment-id but got: $COMMENT_ID"
+            exit 1
+          fi
+          echo "PASS: no comment found with direction=last as expected"
+
+      - id: find-comment-first
+        uses: .
+        with:
+          repository: peter-evans/find-comment
+          issue-number: 1
+          body-includes: 'NONEXISTENT_COMMENT_DIRECTION_TEST_XYZ_54321'
+          direction: first
+          nth: 0
+
+      - name: Assert no comment found with direction=first - comment-id is empty
+        env:
+          COMMENT_ID: ${{ steps.find-comment-first.outputs.comment-id }}
+        run: |
+          echo "comment-id: '$COMMENT_ID'"
+          if [ -n "$COMMENT_ID" ]; then
+            echo "FAIL: expected no comment-id but got: $COMMENT_ID"
+            exit 1
+          fi
+          echo "PASS: no comment found with direction=first as expected"

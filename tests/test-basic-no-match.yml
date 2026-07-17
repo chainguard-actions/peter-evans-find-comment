@@ -1,0 +1,48 @@
+name: Test basic usage - no match found
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: find-comment
+        uses: .
+        with:
+          repository: peter-evans/find-comment
+          issue-number: 1
+          body-includes: 'THIS_STRING_WILL_NEVER_EXIST_IN_ANY_COMMENT_XYZ_12345'
+
+      - name: Assert no comment found - comment-id is empty
+        env:
+          COMMENT_ID: ${{ steps.find-comment.outputs.comment-id }}
+        run: |
+          echo "comment-id: '$COMMENT_ID'"
+          if [ -n "$COMMENT_ID" ]; then
+            echo "FAIL: expected no comment-id but got: $COMMENT_ID"
+            exit 1
+          fi
+          echo "PASS: no comment found as expected"
+
+      - name: Assert no comment found - comment-body is empty
+        env:
+          COMMENT_BODY: ${{ steps.find-comment.outputs.comment-body }}
+        run: |
+          echo "comment-body: '$COMMENT_BODY'"
+          if [ -n "$COMMENT_BODY" ]; then
+            echo "FAIL: expected no comment-body but got: $COMMENT_BODY"
+            exit 1
+          fi
+          echo "PASS: comment-body is empty as expected"
+
+      - name: Assert no comment found - comment-author is empty
+        env:
+          COMMENT_AUTHOR: ${{ steps.find-comment.outputs.comment-author }}
+        run: |
+          echo "comment-author: '$COMMENT_AUTHOR'"
+          if [ -n "$COMMENT_AUTHOR" ]; then
+            echo "FAIL: expected no comment-author but got: $COMMENT_AUTHOR"
+            exit 1
+          fi
+          echo "PASS: comment-author is empty as expected"
