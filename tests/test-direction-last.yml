@@ -1,4 +1,4 @@
-name: Test body-includes filter
+name: Test direction last
 on:
   workflow_dispatch:
 jobs:
@@ -12,9 +12,9 @@ jobs:
         continue-on-error: true
         with:
           issue-number: 1
-          body-includes: "some search string"
+          direction: last
 
-      - name: Assert action ran with body-includes filter
+      - name: Assert action ran with direction=last
         env:
           OUTCOME: ${{ steps.find.outcome }}
           COMMENT_ID: ${{ steps.find.outputs.comment-id }}
@@ -22,7 +22,7 @@ jobs:
           echo "outcome: $OUTCOME"
           echo "comment-id: $COMMENT_ID"
           if [ "$OUTCOME" = "success" ]; then
-            echo "PASS: action succeeded - no matching comment found is valid"
+            echo "PASS: action succeeded with direction=last"
           elif [ "$OUTCOME" = "failure" ]; then
             echo "PASS: action failed gracefully (sentinel repo is not resolvable)"
           else

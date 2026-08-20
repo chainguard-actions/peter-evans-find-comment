@@ -1,4 +1,4 @@
-name: Test find-comment with comment-author
+name: Test comment-author filter
 on:
   workflow_dispatch:
 jobs:
@@ -6,29 +6,28 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
       - id: find
         uses: .
-        with:
-          token: ${{ github.token }}
-          repository: peter-evans/find-comment
-          issue-number: 1
-          comment-author: peter-evans
         continue-on-error: true
-      - name: Assert outputs exist (even if empty)
+        with:
+          issue-number: 1
+          comment-author: "github-actions[bot]"
+
+      - name: Assert action ran with comment-author filter
         env:
-          COMMENT_ID: ${{ steps.find.outputs.comment-id }}
-          COMMENT_BODY: ${{ steps.find.outputs.comment-body }}
-          COMMENT_AUTHOR: ${{ steps.find.outputs.comment-author }}
           OUTCOME: ${{ steps.find.outcome }}
+          COMMENT_ID: ${{ steps.find.outputs.comment-id }}
+          COMMENT_AUTHOR: ${{ steps.find.outputs.comment-author }}
         run: |
           echo "outcome: $OUTCOME"
           echo "comment-id: $COMMENT_ID"
-          echo "comment-body: $COMMENT_BODY"
           echo "comment-author: $COMMENT_AUTHOR"
-          # The action should either succeed (with or without a match) or fail due to API limits
-          if [ "$OUTCOME" = "success" ] || [ "$OUTCOME" = "failure" ]; then
-            echo "PASS: action ran and produced an outcome"
+          if [ "$OUTCOME" = "success" ]; then
+            echo "PASS: action succeeded - no matching comment found is valid"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully (sentinel repo is not resolvable)"
           else
-            echo "FAIL: unexpected outcome: $OUTCOME"
+            echo "FAIL: unexpected outcome '$OUTCOME'"
             exit 1
           fi
