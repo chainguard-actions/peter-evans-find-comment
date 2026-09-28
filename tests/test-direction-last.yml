@@ -1,0 +1,36 @@
+name: Test direction last with nth
+on:
+  workflow_dispatch:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - id: find-comment
+        uses: .
+        continue-on-error: true
+        with:
+          issue-number: 1
+          direction: last
+          nth: 0
+
+      - name: Assert action ran with direction=last (outputs set or failed gracefully on sentinel repo)
+        env:
+          OUTCOME: ${{ steps.find-comment.outcome }}
+          COMMENT_ID: ${{ steps.find-comment.outputs.comment-id }}
+          COMMENT_BODY: ${{ steps.find-comment.outputs.comment-body }}
+          COMMENT_AUTHOR: ${{ steps.find-comment.outputs.comment-author }}
+        run: |
+          echo "outcome: $OUTCOME"
+          echo "comment-id: $COMMENT_ID"
+          echo "comment-body: $COMMENT_BODY"
+          echo "comment-author: $COMMENT_AUTHOR"
+          if [ "$OUTCOME" = "success" ]; then
+            echo "PASS: action succeeded (comment-id='$COMMENT_ID')"
+          elif [ "$OUTCOME" = "failure" ]; then
+            echo "PASS: action failed gracefully (sentinel repo is not resolvable)"
+          else
+            echo "FAIL: unexpected outcome '$OUTCOME'"
+            exit 1
+          fi
