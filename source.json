@@ -4,8 +4,13 @@
   "version": "v3.0.0",
   "commit_sha": "d5fe37641ad8451bdd80312415672ba26c86575e",
   "url": "https://github.com/peter-evans/find-comment",
-  "policy_sha": "d636be7e43ef829af6e853da6b3c7566db9f72fe",
+  "policy_sha": "374911c4be584df24e6da57af2d990570ef0f859",
   "test_policy_sha": "843adf9e4b8f85d0c08b27b9d0b09dd094b54702",
   "test_agent_version": "2",
-  "harden_agent_version": "2"
+  "harden_agent_version": "2",
+  "dist_artifact": {
+    "gcs_uri": "gs://patch-actions-node-artifacts/dist-artifacts/peter-evans/find-comment/v3.0.0/sha256-e83d4961f8b8f9a642fdf0011d1a5af7cad5e2516c8b63da3854b99824ef45c2.tar.gz",
+    "sha256": "e83d4961f8b8f9a642fdf0011d1a5af7cad5e2516c8b63da3854b99824ef45c2",
+    "size_bytes": 134819
+  }
 }
